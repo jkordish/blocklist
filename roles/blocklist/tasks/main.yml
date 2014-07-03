@@ -1,0 +1,38 @@
+---
+- name: create blocklist directory
+  action: file path="~/Library/Application Support/Transmission/blocklists" state=directory
+
+- name: create tmp directory
+  action: file path=/tmp/blocklist state=directory
+
+- name: get blocklists
+  action: get_url url="http://list.iblocklist.com/?list={{ item }}&fileformat=p2p&archiveformat=gz" dest="/tmp/blocklist/{{ item }}.gz"
+  with_items:
+    - bt_level2
+    - bt_level3
+    - bt_edu
+    - bt_ads
+    - bt_spyware
+    - bt_proxy
+    - bt_templist
+    - bt_microsoft
+    - bt_spider
+    - bt_hijacked
+    - bt_dshield
+    - ficutxiwawokxlcyoeye
+    - ghlzqtqxnzctvvajwwag
+    - ijfqtofzixtwayqovmxn
+    - ecqbsykllnadihkdirsh
+    - jcjfaxgyyshvdbceroxf
+    - lljggjrpmefcwqknpalp
+
+- name: unarchive blocklists
+  action: shell gzip -cd {{ item }} >> /tmp/blocklist/list
+  with_fileglob:
+    - /tmp/blocklist/*.gz
+
+- name: copy blocklist
+  action: copy src=/tmp/blocklist/list dest="~/Library/Application Support/Transmission/blocklists/list" force=yes
+
+- name: remove old blocklist
+  action: file state=absent path="/tmp/blocklist/list"

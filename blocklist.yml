@@ -1,0 +1,8 @@
+---
+  - name: blocklist
+    hosts: localhost
+    connection: local
+    gather_facts: no
+    sudo: no
+    roles:
+      - { role: 'blocklist' }
