@@ -1,6 +1,11 @@
 ---
-- name: create blocklist directory
+- name: create blocklist directory - osx
+  when: hostvars[inventory_hostname]['ansible_system'] == "Darwin"
   action: file path="~/Library/Application Support/Transmission/blocklists" state=directory
+
+- name: create blocklist directory - linux
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux"
+  action: file path="~/.config/transmission/blocklists/list" state=directory
 
 - name: create tmp directory
   action: file path=/tmp/blocklist state=directory
@@ -31,8 +36,13 @@
   with_fileglob:
     - /tmp/blocklist/*.gz
 
-- name: copy blocklist
+- name: copy blocklist - osx
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Darwin"
   action: copy src=/tmp/blocklist/list dest="~/Library/Application Support/Transmission/blocklists/list" force=yes
+
+- name: copy blocklist - linux
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux"
+  action: copy src=/tmp/blocklist/list dest="~/.config/transmission/blocklists/list" force=yes
 
 - name: remove old blocklist
   action: file state=absent path="/tmp/blocklist/list"
