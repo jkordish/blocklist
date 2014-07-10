@@ -11,6 +11,7 @@
   action: file path=/tmp/blocklist state=directory
 
 - name: get blocklists
+  register: get_blocklists
   action: get_url url="http://list.iblocklist.com/?list={{ item }}&fileformat=p2p&archiveformat=gz" dest="/tmp/blocklist/{{ item }}.gz"
   with_items:
     - bt_level2
@@ -32,17 +33,22 @@
     - lljggjrpmefcwqknpalp
 
 - name: unarchive blocklists
+  register: unarchive_blocklists
+  when: get_blocklists.changed
   action: shell gzip -cd {{ item }} >> /tmp/blocklist/list
   with_fileglob:
     - /tmp/blocklist/*.gz
 
 - name: copy blocklist - osx
-  when: hostvars[inventory_hostname]['ansible_os_family'] == "Darwin"
+  register: copy_blocklist
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Darwin" and get_blocklists.changed
   action: copy src=/tmp/blocklist/list dest="~/Library/Application Support/Transmission/blocklists/list" force=yes
 
 - name: copy blocklist - linux
-  when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux"
+  register: copy_blocklist
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux" and get_blocklists.changed
   action: copy src=/tmp/blocklist/list dest="~/.config/transmission/blocklists/list" force=yes
 
 - name: remove old blocklist
+  when: copy_blocklist.changed
   action: file state=absent path="/tmp/blocklist/list"
