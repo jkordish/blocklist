@@ -42,12 +42,12 @@
 - name: copy blocklist - osx
   register: copy_blocklist
   when: hostvars[inventory_hostname]['ansible_os_family'] == "Darwin" and get_blocklists.changed
-  action: copy src=/tmp/blocklist/list dest="~/Library/Application Support/Transmission/blocklists/list" force=yes
+  action: copy src=/tmp/blocklist/list dest="~/Library/Application Support/Transmission/blocklists/" force=yes
 
 - name: copy blocklist - linux
   register: copy_blocklist
   when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux" and get_blocklists.changed
-  action: copy src=/tmp/blocklist/list dest="~/.config/transmission/blocklists/list" force=yes
+  action: copy src=/tmp/blocklist/list dest="~/.config/transmission/blocklists/" force=yes
 
 - name: remove old blocklist
   when: copy_blocklist.changed
