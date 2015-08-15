@@ -1,18 +1,17 @@
 ---
 - name: create blocklist directory - osx
   when: hostvars[inventory_hostname]['ansible_system'] == "Darwin"
-  action: file path="~/Library/Application Support/Transmission/blocklists" state=directory
+  file: path="~/Library/Application Support/Transmission/blocklists" state=directory
 
 - name: create blocklist directory - linux
   when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux"
-  action: file path="~/.config/transmission/blocklists/list" state=directory
+  file: path="~/.config/transmission/blocklists/" state=directory
 
 - name: create tmp directory
-  action: file path=/tmp/blocklist state=directory
+  file: path=/tmp/blocklist state=directory
 
 - name: get blocklists
-  register: get_blocklists
-  action: get_url url="http://list.iblocklist.com/?list={{ item }}&fileformat=p2p&archiveformat=gz" dest="/tmp/blocklist/{{ item }}.gz"
+  get_url: url="http://list.iblocklist.com/?list={{ item }}&fileformat=p2p&archiveformat=gz" dest="/tmp/blocklist/{{ item }}.gz"
   with_items:
     - bt_level2
     - bt_level3
@@ -32,23 +31,22 @@
     - jcjfaxgyyshvdbceroxf
     - lljggjrpmefcwqknpalp
 
-- name: unarchive blocklists
-  register: unarchive_blocklists
-  when: get_blocklists.changed
-  action: shell gzip -cd {{ item }} >> /tmp/blocklist/list
+- name: decompress lists
+  command: gzip -d {{ item }}
   with_fileglob:
     - /tmp/blocklist/*.gz
 
 - name: copy blocklist - osx
-  register: copy_blocklist
-  when: hostvars[inventory_hostname]['ansible_os_family'] == "Darwin" and get_blocklists.changed
-  action: copy src=/tmp/blocklist/list dest="~/Library/Application Support/Transmission/blocklists/" force=yes
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Darwin"
+  copy: src={{ item }} dest="~/Library/Application Support/Transmission/blocklists/" force=yes
+  with_fileglob:
+    - /tmp/blocklist/*
 
 - name: copy blocklist - linux
-  register: copy_blocklist
-  when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux" and get_blocklists.changed
-  action: copy src=/tmp/blocklist/list dest="~/.config/transmission/blocklists/" force=yes
+  when: hostvars[inventory_hostname]['ansible_os_family'] == "Linux"
+  copy: src={{ item }} dest="~/.config/transmission/blocklists/" force=yes
+  with_fileglob:
+    - /tmp/blocklist/*
 
-- name: remove old blocklist
-  when: copy_blocklist.changed
-  action: file state=absent path="/tmp/blocklist/list"
+- name: remove tmp directory
+  file: state=absent path="/tmp/blocklist/"
